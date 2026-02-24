@@ -35,7 +35,7 @@ const getOwnerById = async (req, res) => {
     });
   } catch (error) {
     console.log(error);
-    
+
     res.json({
       error: error.message,
     });
