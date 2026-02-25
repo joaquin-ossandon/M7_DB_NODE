@@ -47,18 +47,17 @@ const createOwner = async (req, res) => {
   // app -> express.json() -> para que entienda cuando se entrega información de texto plano en formato json a nuestro servidor... habilita también acceso a req.body
 
   // JSON.stringify({hola: "valor"}) -> "{"hola": "valor"}"
-
-  const client = await pool.connect();
-
   // const trimmedName = name.trim()
   // const trimmedPhone = phone.trim()
-
+  
   user.name = user.name?.trim()
   user.phone = user.phone?.trim()
-
+  
   const {name, phone} = user
   
   if(!name) throw new Error("El nombre es obligatorio");
+  
+  const client = await pool.connect();
   
   try {
     const query =
