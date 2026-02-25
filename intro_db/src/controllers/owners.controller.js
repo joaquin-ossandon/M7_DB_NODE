@@ -42,7 +42,51 @@ const getOwnerById = async (req, res) => {
   }
 };
 
+const createOwner = async (req, res) => {
+  const user = req.body; // app -> express.urlencode() -> para que entienda lo que viene en los forms y tengamos acceso al req.body.
+  // app -> express.json() -> para que entienda cuando se entrega información de texto plano en formato json a nuestro servidor... habilita también acceso a req.body
+
+  // JSON.stringify({hola: "valor"}) -> "{"hola": "valor"}"
+
+  const client = await pool.connect();
+
+  // const trimmedName = name.trim()
+  // const trimmedPhone = phone.trim()
+
+  user.name = user.name?.trim()
+  user.phone = user.phone?.trim()
+
+  const {name, phone} = user
+  
+  if(!name) throw new Error("El nombre es obligatorio");
+  
+  try {
+    const query =
+      "INSERT INTO owners (name, phone) VALUES ($1, $2) RETURNING *";
+    const values = [name, phone];
+
+    const result = await client.query({
+      text: query,
+      values,
+    });
+
+    res.status(201).json({
+      success: true,
+      owner: result.rows[0],
+    }); // estado 201 significa -> Created
+  } catch (error) {
+    console.log(error);
+
+    res.status(500).json({
+      error: error.message,
+    });
+  } finally {
+    client.release();
+  }
+};
+
 module.exports = {
   getAllOwners,
   getOwnerById,
+  createOwner,
 };
