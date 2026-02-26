@@ -1,8 +1,16 @@
-const { pool } = require("../config/db");
+const { ZodError } = require("zod");
+const {
+  getOwnerById,
+  getAllOwners,
+  createOwner,
+  updateOwner,
+  deleteOwner,
+} = require("../models/owners.models");
+const { createOwnerSchema } = require("../schemas/owners.schema");
 
-const getAllOwners = async (req, res) => {
+const apiGetAllOwners = async (req, res) => {
   try {
-    const { rows: owners } = await pool.query("SELECT * FROM owners");
+    const owners = await getAllOwners();
 
     res.json({ owners });
   } catch (error) {
@@ -10,82 +18,96 @@ const getAllOwners = async (req, res) => {
   }
 };
 
-const getOwnerById = async (req, res) => {
+const apiGetOwnerById = async (req, res) => {
   const { owner_id } = req.params;
   try {
-    const { rows: owner, rowCount } = await pool.query({
-      text: "SELECT * FROM owners WHERE owner_id = $1",
-      values: [owner_id],
-    });
+    const result = await getOwnerById(owner_id);
 
-    if (!rowCount) {
-      throw new Error(`No se encontró un owner con el id ${owner_id}`);
-    }
-
-    const { rows: pets } = await pool.query({
-      text: "SELECT * FROM pets WHERE owner_id = $1",
-      values: [owner_id],
-    });
-
-    res.json({
-      owner: {
-        ...owner,
-        pets,
-      },
-    });
+    res.json(result);
   } catch (error) {
     console.log(error);
-
     res.json({
       error: error.message,
     });
   }
 };
 
-const createOwner = async (req, res) => {
+const apiCreateOwner = async (req, res) => {
   const user = req.body; // app -> express.urlencode() -> para que entienda lo que viene en los forms y tengamos acceso al req.body.
   // app -> express.json() -> para que entienda cuando se entrega información de texto plano en formato json a nuestro servidor... habilita también acceso a req.body
 
   // JSON.stringify({hola: "valor"}) -> "{"hola": "valor"}"
   // const trimmedName = name.trim()
   // const trimmedPhone = phone.trim()
-  
-  user.name = user.name?.trim()
-  user.phone = user.phone?.trim()
-  
-  const {name, phone} = user
-  
-  if(!name) throw new Error("El nombre es obligatorio");
-  
-  const client = await pool.connect();
-  
+
+  user.name = user.name?.trim();
+  user.phone = user.phone?.trim();
+
   try {
-    const query =
-      "INSERT INTO owners (name, phone) VALUES ($1, $2) RETURNING *";
-    const values = [name, phone];
+    createOwnerSchema.parse(user);
+    const { name, phone } = user;
+    const result = createOwner(name, phone);
 
-    const result = await client.query({
-      text: query,
-      values,
-    });
-
-    res.status(201).json({
+    res.json({
       success: true,
-      owner: result.rows[0],
-    }); // estado 201 significa -> Created
+      owner: result,
+    });
   } catch (error) {
-    console.log(error);
+    if (error instanceof ZodError) {
+      return res.status(400).json({
+        error: error.format(),
+      });
+    }
 
     res.status(500).json({
       error: error.message,
     });
-  } finally {
-    client.release();
+  }
+};
+
+const apiUpdateOwner = async (req, res) => {
+  const { owner_id } = req.params;
+  const { name, phone } = req.body;
+
+  try {
+    const result = await updateOwner(owner_id, name, phone);
+
+    res.json({
+      success: true,
+      owner: result,
+    });
+  } catch (error) {
+    console.log(error);
+    res.json({
+      success: false,
+      error: error.message,
+    });
+  }
+};
+
+const apiDeleteOwner = async (req, res) => {
+  const { owner_id } = req.params;
+
+  try {
+    const result = await deleteOwner(owner_id);
+
+    res.json({
+      success: true,
+      owner: result,
+    });
+  } catch (error) {
+    console.log(error);
+    res.json({
+      success: false,
+      error: error.message,
+    });
   }
 };
 
 module.exports = {
-  getAllOwners,
-  getOwnerById,
-  createOwner,
+  apiGetAllOwners,
+  apiGetOwnerById,
+  apiCreateOwner,
+  apiUpdateOwner,
+  apiDeleteOwner,
 };
