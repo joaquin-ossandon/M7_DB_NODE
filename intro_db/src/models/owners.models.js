@@ -36,22 +36,42 @@ const getOwnerById = async (owner_id) => {
     throw error;
   }
 };
-const createOwner = async (name, phone) => {
+const createOwner = async (owner, pets) => {
   // cliente dedicado sólo para cuando sean consultas "complejas" (ej: transacciones o multiples queries)
   const client = await pool.connect();
 
   try {
+    await client.query("BEGIN")
+
     const query =
       "INSERT INTO owners (name, phone) VALUES ($1, $2) RETURNING *";
-    const values = [name, phone];
+    const values = [owner.name, owner.phone];
 
-    const result = await client.query({
+    const ownerResult = await client.query({
       text: query,
       values,
     });
 
-    return result.rows[0];
+    let petAcc = [/* PROMISES */]
+    // Promises
+
+    pets.forEach(async (pet) => {
+      const query = "INSERT INTO pets (name, species, age, owner_id) VALUES ($1, $2, $3, $4) RETURNING *"
+      const values = [pet.name, pet.species, pet.age, ownerResult.rows[0].owner_id]
+
+      const petResult = await client.query({
+        text: query,
+        values,
+      });
+
+      petAcc.push(petResult)
+    })
+
+    client.query("COMMIT")
+
+    return ownerResult.rows[0];
   } catch (error) {
+    client.query("ROLLBACK")
     throw error;
   } finally {
     client.release();

@@ -33,20 +33,17 @@ const apiGetOwnerById = async (req, res) => {
 };
 
 const apiCreateOwner = async (req, res) => {
-  const user = req.body; // app -> express.urlencode() -> para que entienda lo que viene en los forms y tengamos acceso al req.body.
+  const { owner, pets } = req.body; // app -> express.urlencode() -> para que entienda lo que viene en los forms y tengamos acceso al req.body.
   // app -> express.json() -> para que entienda cuando se entrega información de texto plano en formato json a nuestro servidor... habilita también acceso a req.body
 
   // JSON.stringify({hola: "valor"}) -> "{"hola": "valor"}"
   // const trimmedName = name.trim()
   // const trimmedPhone = phone.trim()
 
-  user.name = user.name?.trim();
-  user.phone = user.phone?.trim();
-
   try {
-    createOwnerSchema.parse(user);
-    const { name, phone } = user;
-    const result = createOwner(name, phone);
+    createOwnerSchema.parse({ owner, pets });
+
+    const result = await createOwner(owner, pets);
 
     res.json({
       success: true,
