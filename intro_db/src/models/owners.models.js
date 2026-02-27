@@ -41,7 +41,7 @@ const createOwner = async (owner, pets) => {
   const client = await pool.connect();
 
   try {
-    await client.query("BEGIN")
+    await client.query("BEGIN");
 
     const query =
       "INSERT INTO owners (name, phone) VALUES ($1, $2) RETURNING *";
@@ -52,26 +52,34 @@ const createOwner = async (owner, pets) => {
       values,
     });
 
-    let petAcc = [/* PROMISES */]
-    // Promises
-
-    pets.forEach(async (pet) => {
-      const query = "INSERT INTO pets (name, species, age, owner_id) VALUES ($1, $2, $3, $4) RETURNING *"
-      const values = [pet.name, pet.species, pet.age, ownerResult.rows[0].owner_id]
+    let petAcc = pets.map(async (pet) => {
+      const query =
+        "INSERT INTO pets (name, species, age, owner_id) VALUES ($1, $2, $3, $4) RETURNING *";
+      const values = [
+        pet.name,
+        pet.species,
+        pet.age,
+        ownerResult.rows[0].owner_id,
+      ];
 
       const petResult = await client.query({
         text: query,
         values,
       });
 
-      petAcc.push(petResult)
-    })
+      return petResult.rows[0]
+    }); // [pet1, pet2, petN]
 
-    client.query("COMMIT")
+    const petResults = await Promise.all(petAcc)  // [...petAcc, ...petAcc2] => [1,2,3] [4,5,6] -> [1,2,3,4,5,6]
 
-    return ownerResult.rows[0];
+    client.query("COMMIT");
+
+    return { ...ownerResult.rows[0], pets: petResults };
+    // ownerResult.rows[0] => { name: "...", phone: "..." }
+    // { name: "Anibal", "phone": "+569444555666", pets: [] }
+    // ORM syntax -> pets.getById(3) -> pets.createOne({name, age, species})
   } catch (error) {
-    client.query("ROLLBACK")
+    client.query("ROLLBACK");
     throw error;
   } finally {
     client.release();
