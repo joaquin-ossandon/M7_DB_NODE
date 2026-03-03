@@ -1,6 +1,5 @@
 const { DataTypes } = require("sequelize");
 const { sequelize } = require("../config/database");
-const { Owner } = require("./owner");
 
 const Pet = sequelize.define("pets", {
   name: {
@@ -14,7 +13,5 @@ const Pet = sequelize.define("pets", {
     type: DataTypes.STRING,
   },
 });
-
-// Pet.belongsTo(Owner);
 
 module.exports = { Pet };
