@@ -1,12 +1,10 @@
 const nodemailer = require("nodemailer");
 
 const transporter = nodemailer.createTransport({
-  host: "smtp-relay.gmail.com",
-  port: 587,
-  secure: false, // use STARTTLS (upgrade connection to TLS after connecting)
+  service: "gmail",
   auth: {
     user: "fullstackjavasciptveterinariob@gmail.com",
-    pass: "nvoc fzgu rcus hxfa",
+    pass: process.env.GOOGLE_APP_PASSWORD,
   },
 });
 
