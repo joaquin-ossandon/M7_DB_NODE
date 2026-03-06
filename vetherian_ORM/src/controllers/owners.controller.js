@@ -37,7 +37,7 @@ const getAllOwners = async (req, res) => {
       attributes: ["name", "phone"],
       include: {
         association: "pets",
-        attributes: ["name"],
+        attributes: ["name", "species"],
       },
       limit: LIMIT,
       offset: OFFSET,
