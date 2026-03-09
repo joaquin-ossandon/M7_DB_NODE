@@ -9,5 +9,8 @@ server.use(express.json());
 
 server.use("/api/pets", petsRoutes);
 server.use("/api/owners", ownersRoutes);
+server.get("/", (req, res) => {
+    res.send("<h1>Hola mundo</h1>")
+})
 
-module.exports = { server };
+module.exports = server;
