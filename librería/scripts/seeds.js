@@ -40,9 +40,19 @@ async function seed() {
         await sequelize.sync({ force: true });
         
         await Author.bulkCreate(authors);
-        await Book.bulkCreate(books, {
-            include: [Category]
-        });
+        await Category.bulkCreate(categories);
+        await Book.bulkCreate(books);
+
+        // extraemos el modelo de la tabla intermedia (el nombre lo definimos en la asociación index.js)
+        const BookCategory = sequelize.models.Book_Category; 
+        
+        // Insertar datos en la tabla intermedia generada por Sequelize
+        await BookCategory.bulkCreate([
+            { bookId: 1, categoryId: 1 },
+            { bookId: 2, categoryId: 2 },
+            { bookId: 3, categoryId: 3 },
+            { bookId: 3, categoryId: 1 },
+        ]);
         console.log("Datos insertados correctamente");
     } catch (error) {
         console.error("Error al insertar datos:", error);
